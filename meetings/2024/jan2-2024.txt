@@ -1,0 +1,42 @@
+FLIX Working Group - Jan 2
+
+
+* FLIX on-chain
+   * Requires:
+      * On-chain data structure format
+      * On-chain FLIX ID generation / verification 
+      * Naming FLIX.
+
+
+* Akos: How should data be stored on-chain?
+   * Templates can be co-located in the same accounts as the contracts they interact with are deployed to.
+   * Bjarte: If we somehow link contract -> template, we can leverage the existing work done by Chase on Flow CLI dependency manager.
+   * Bjarte: Makes more sense for FLIX to be struct rather than resource.
+   * How should we serialize the data structure?
+      * Jeff: Makes sense to do it as Cadence struct so we can operate on the data structure on-chain to do id generation/verification etc.
+
+
+* Jeff: FLIX Discovery:
+   * Steps:
+      * 1. Put FLIX data structures as cadence structs on-chain
+      * 2. Have a way to store FLIX structs inside FLIX collections inside accounts 
+         * Should emit events etc
+
+
+* FLIX collection needs to make FLIX structs queryable by:
+   * ID
+   * Alias/Name
+   * Cadence (by network)
+
+
+      * 3. Create a way to generate name/alias that resolve to FLIX structs (in the account) or other alias (could be to another account).
+         * Alias can include routing:
+            * “0xABC123DEF456/contract1-purchase-jeff-nft” -> asdf123asdf123
+            * “0xABC123DEF456/blah-blah” -> “0xBjarte/blah-blah-blah”
+         * Point to FLIX ID:
+            * “0xABC123DEF456/contract1-purchase-jeff-nft” -> asd123asdf123…
+            * * Jeff: FLIX Publishing:
+   * Steps:
+      * 1. Flow CLI command to publish projects transactions/scripts as FLIX
+      * 2. Put those FLIX inside the users collection in their account
+      * 3. FLIX are advertised to an aggregator service (using the events)

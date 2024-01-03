@@ -1,0 +1,27 @@
+FLIX Working Group - Dec 19
+
+* FLIX demo with flow-cli
+   * Binding files, Cadence type support, binding supports js and ts.
+
+* Discussion: flow-cli “publish” command
+   * Get flix available, PR is annoying, need an automatic that does not rely on an “approval” process to publish FLIX, 
+   * Need backend support to index on FLIX v1.1 network_pin. Good to have a source of truth on-chain.
+   * Bjarte suggested the concept of “Channels”: .Find, … (unstable). Could be “Approved” and moved to a specific Stable Channel on-chain location.
+      * Dapp Channel (in dev, developer account)
+      * Global Channel (verified, community action) 0xGlobalAddress/transfer-token is an alias (pointer) 0x11…333/transfer-token
+   * Alias, basically a pointer to a newer version of a FLIX cuz tx or script changes cuz smart contracts changed. Gives a way to deprecated old FLIX aka versioning.
+   * Structure of on-chain registry aka Channel (protocol)
+      * Resource with map[string]Struct. 
+         * string key: template id.
+         * network pin, template id, formatted flix json
+      * Aliases map[string] to template id (to point to specific flix)
+      * Dapps auto generate transactions / scripts at runtime
+      * (Flow-CLI, use case) 
+         * Download flix locally based by network. 
+            * <address>/<flix alias> like 0x11…333/transfer-token
+            * <address> get all flix at address
+         * Auto generate binding files based on <address>
+   * (Akos) Channel contract interfaces to create new FLIP with smart contract.
+   
+* Updated Cadence Docs FLIP PR, https://github.com/onflow/flips/pull/80
+   * Got approval
