@@ -139,7 +139,7 @@ contract FLIXRegistry {
         access(all)
         fun remove(id: String): FLIX? {
             let removed = self.flixes.remove(key: id)
-            emit Removed(id: id)
+            if(removed != nil) { emit Removed(id: id) }
             return removed
         }
 

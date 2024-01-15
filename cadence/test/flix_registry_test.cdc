@@ -15,6 +15,15 @@ fun setup() {
         arguments: []
     )
     Test.expect(err, Test.beNil())
+    Test.createSnapshot(name: "contract deployed")
+
+    let txResult = executeTransaction(
+        "../transactions/create_registry.cdc",
+        [],
+        REGISTRY_OWNER
+    )
+    Test.expect(txResult, Test.beSucceeded())
+    Test.createSnapshot(name: "registry created")
 }
 
 access(all)
@@ -25,12 +34,6 @@ fun testShouldEmitContractInitializedEvent() {
 
 access(all)
 fun testShouldCreateRegistry() {
-    let txResult = executeTransaction(
-        "../transactions/create_registry.cdc",
-        [],
-        REGISTRY_OWNER
-    )
-    Test.expect(txResult, Test.beSucceeded())
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
@@ -182,6 +185,30 @@ fun testShouldRemoveFlix() {
 
     let typ = Type<FLIXRegistry.Removed>()
     Test.assertEqual(1, Test.eventsOfType(typ).length)
+
+    let scriptResult = executeScript(
+        "../scripts/get_registry_size.cdc",
+        [REGISTRY_OWNER.address]
+    )
+    Test.expect(scriptResult, Test.beSucceeded())
+
+    let registrySize = scriptResult.returnValue! as! Int
+    Test.assertEqual(0, registrySize)
+}
+
+access(all)
+fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
+    Test.loadSnapshot(name: "registry created")
+
+    let removeTxResult = executeTransaction(
+        "../transactions/remove_flix.cdc",
+        [TEMPLATE_ID],
+        REGISTRY_OWNER
+    )
+    Test.expect(removeTxResult, Test.beSucceeded())
+
+    let typ = Type<FLIXRegistry.Removed>()
+    Test.assertEqual(0, Test.eventsOfType(typ).length)
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
