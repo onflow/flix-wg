@@ -130,7 +130,7 @@ contract FLIXRegistry {
 
         access(all)
         fun deprecate(idOrAlias: String) {
-            var flix = self.lookup(idOrAlias: idOrAlias) ?? panic("FLIX does not exist with the given id or alias")
+            var flix = self.lookup(idOrAlias: idOrAlias) ?? panic("FLIX does not exist with the given id or alias: ".concat(idOrAlias))
             flix.status = FLIXStatus.deprecated
             self.flixes[flix.id] = flix
             emit Deprecated(id: flix.id)

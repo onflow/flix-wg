@@ -219,3 +219,20 @@ fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
     let registrySize = scriptResult.returnValue! as! Int
     Test.assertEqual(0, registrySize)
 }
+
+access(all)
+fun testShouldThrowExeptionWhenDeprecatingNonexistentFlix() {
+    Test.loadSnapshot(name: "registry created")
+
+    Test.expectFailure(fun(): Void {
+        let txResult = executeTransaction(
+            "../transactions/deprecate_flix.cdc",
+            [TEMPLATE_ID],
+            REGISTRY_OWNER
+        )
+        Test.expect(txResult, Test.beFailed())
+        let err: Test.Error? = txResult.error
+        panic(err!.message) // to trick expectFaliure, so we can match on the substring of the actual error
+    }, errorMessageSubstring: "FLIX does not exist with the given id or alias: aTestId")
+
+}
