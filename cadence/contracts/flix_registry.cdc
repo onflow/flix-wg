@@ -5,13 +5,16 @@ contract FLIXRegistry {
     event ContractInitialized()
 
     access(all)
-    event Published(alias: String, id: String, cadenceBodyHash: String)
+    event RegistryCreated(name: String)
 
     access(all)
-    event Removed(id: String)
+    event Published(registryOwner: Address, registryName: String, registryUuid: UInt64, alias: String, id: String, cadenceBodyHash: String)
 
     access(all)
-    event Deprecated(id: String)
+    event Removed(registryOwner: Address, registryName: String, registryUuid: UInt64, id: String)
+
+    access(all)
+    event Deprecated(registryOwner: Address, registryName: String, registryUuid: UInt64, id: String)
 
     access(all)
     event AliasLinked(alias: String, id: String)
@@ -95,12 +98,13 @@ contract FLIXRegistry {
         access(account) var flixes: {String: FLIX}
         access(account) var aliases: {String: String}
         access(account) var cadenceBodyHashes: {String: FLIX}
+        access(account) let name: String
 
         access(all) 
         fun publish(alias: String, flix: FLIX) {
             self.flixes[flix.id] = flix
             self.aliases[alias] = flix.id
-            emit Published(alias: alias, id: flix.id, cadenceBodyHash: flix.cadenceBodyHash)
+            emit Published(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, alias: alias, id: flix.id, cadenceBodyHash: flix.cadenceBodyHash)
         }
 
         access(all)
@@ -133,13 +137,13 @@ contract FLIXRegistry {
             var flix = self.lookup(idOrAlias: idOrAlias) ?? panic("FLIX does not exist with the given id or alias: ".concat(idOrAlias))
             flix.status = FLIXStatus.deprecated
             self.flixes[flix.id] = flix
-            emit Deprecated(id: flix.id)
+            emit Deprecated(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, id: flix.id)
         }
 
         access(all)
         fun remove(id: String): FLIX? {
             let removed = self.flixes.remove(key: id)
-            if(removed != nil) { emit Removed(id: id) }
+            if(removed != nil) { emit Removed(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, id: id) }
             return removed
         }
 
@@ -153,16 +157,28 @@ contract FLIXRegistry {
             return self.aliases
         }
 
-        init() {
+        init(name: String) {
+            self.name = name
             self.flixes = {}
             self.aliases = {}
             self.cadenceBodyHashes = {}
+            emit RegistryCreated(name: name)
         }
     }
 
     access(all)
-    fun createRegistry(): @Registry {
-        return <- create Registry()
+    fun createRegistry(name: String): @Registry {
+        return <- create Registry(name: name)
+    }
+
+    access(all)
+    fun PublicPath(name: String): PublicPath {
+        return PublicPath(identifier: "flix_".concat(name))!
+    }
+
+        access(all)
+    fun StoragePath(name: String): StoragePath {
+        return StoragePath(identifier: "flix_".concat(name))!
     }
 
     init() {

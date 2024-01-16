@@ -1,16 +1,16 @@
 import "FLIXRegistry"
 
-transaction {
+transaction(name: String) {
 
     prepare(signer: AuthAccount) {
         // Check if the account already has a Registry
-        if signer.borrow<&FLIXRegistry.Registry>(from: /storage/stableFlixRegistry) == nil {
+        if signer.borrow<&FLIXRegistry.Registry>(from: FLIXRegistry.StoragePath(name: name)) == nil {
             // Create a new Registry resource
-            let registry <- FLIXRegistry.createRegistry()
+            let registry <- FLIXRegistry.createRegistry(name: name)
 
             // Save it with restricted access
-            signer.save(<-registry, to: /storage/stableFlixRegistry)
-            signer.link<&FLIXRegistry.Registry{FLIXRegistry.Queryable, FLIXRegistry.Admin}>(/public/stableFlixRegistryPublic, target: /storage/stableFlixRegistry)
+            signer.save(<-registry, to: FLIXRegistry.StoragePath(name: name))
+            signer.link<&FLIXRegistry.Registry{FLIXRegistry.Queryable, FLIXRegistry.Admin}>(FLIXRegistry.PublicPath(name: name), target: FLIXRegistry.StoragePath(name: name))
         }
     }
 }

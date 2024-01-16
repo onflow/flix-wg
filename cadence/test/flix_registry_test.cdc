@@ -6,6 +6,7 @@ access(all) let REGISTRY_OWNER = Test.createAccount()
 access(all) let TEMPLATE_ID = "aTestId"
 access(all) let ALIAS = "anAlias"
 access(all) let NEW_ALIAS = "aNewAlias"
+access(all) let REGISTRY_NAME = "someName"
 
 access(all)
 fun setup() {
@@ -19,7 +20,7 @@ fun setup() {
 
     let txResult = executeTransaction(
         "../transactions/create_registry.cdc",
-        [],
+        [REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(txResult, Test.beSucceeded())
@@ -33,11 +34,20 @@ fun testShouldEmitContractInitializedEvent() {
 }
 
 access(all)
+fun testShouldEmitRegistryCreatedEvent() {
+    let typ = Type<FLIXRegistry.RegistryCreated>()
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.RegistryCreated
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.name)
+}
+
+access(all)
 fun testShouldCreateRegistry() {
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -52,17 +62,24 @@ fun testShouldPublishFlix() {
 
     let txResult = executeTransaction(
         "../transactions/publish_flix.cdc",
-        [ALIAS, TEMPLATE_ID, jsonBody, cadenceBodyHash],
+        [ALIAS, TEMPLATE_ID, jsonBody, cadenceBodyHash, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(txResult, Test.beSucceeded())
 
     let typ = Type<FLIXRegistry.Published>()
-    Test.assertEqual(1, Test.eventsOfType(typ).length)
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.Published
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.registryName)
+    Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
+    Test.assertEqual(ALIAS, event.alias)
+    Test.assertEqual(TEMPLATE_ID, event.id)
+    Test.assertEqual(cadenceBodyHash, event.cadenceBodyHash)
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -71,7 +88,7 @@ fun testShouldPublishFlix() {
 
     let lookupScriptResult = executeScript(
         "../scripts/lookup.cdc",
-        [REGISTRY_OWNER.address, ALIAS]
+        [REGISTRY_OWNER.address, ALIAS, REGISTRY_NAME]
     )
 
     Test.expect(lookupScriptResult, Test.beSucceeded())
@@ -84,7 +101,7 @@ fun testShouldPublishFlix() {
 
     let resolveScriptResult = executeScript(
         "../scripts/resolve.cdc",
-        [REGISTRY_OWNER.address, cadenceBodyHash]
+        [REGISTRY_OWNER.address, cadenceBodyHash, REGISTRY_NAME]
     )
 
     Test.expect(lookupScriptResult, Test.beSucceeded())
@@ -100,7 +117,7 @@ access(all)
 fun testShouldLinkAlias() {
     let txResult = executeTransaction(
         "../transactions/link_alias.cdc",
-        [NEW_ALIAS, TEMPLATE_ID],
+        [NEW_ALIAS, TEMPLATE_ID, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(txResult, Test.beSucceeded())
@@ -110,7 +127,7 @@ fun testShouldLinkAlias() {
 
     let scriptResult = executeScript(
         "../scripts/get_all_alias.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -124,7 +141,7 @@ access(all)
 fun testShouldUnlinkAlias() {
     let txResult = executeTransaction(
         "../transactions/unlink_alias.cdc",
-        [ALIAS],
+        [ALIAS, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(txResult, Test.beSucceeded())
@@ -134,7 +151,7 @@ fun testShouldUnlinkAlias() {
 
     let scriptResult = executeScript(
         "../scripts/get_all_alias.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -148,24 +165,29 @@ access(all)
 fun testShouldDeprecateFlixWithTemplateId() {
     let lookupScriptResultBefore = executeScript(
         "../scripts/lookup.cdc",
-        [REGISTRY_OWNER.address, TEMPLATE_ID]
+        [REGISTRY_OWNER.address, TEMPLATE_ID, REGISTRY_NAME]
     )
     let flixBefore = lookupScriptResultBefore.returnValue! as! FLIXRegistry.FLIX
     Test.assertEqual(FLIXRegistry.FLIXStatus.active, flixBefore.status)
 
     let txResult = executeTransaction(
         "../transactions/deprecate_flix.cdc",
-        [TEMPLATE_ID],
+        [TEMPLATE_ID, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(txResult, Test.beSucceeded())
 
     let typ = Type<FLIXRegistry.Deprecated>()
-    Test.assertEqual(1, Test.eventsOfType(typ).length)
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.Deprecated
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.registryName)
+    Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
+    Test.assertEqual(TEMPLATE_ID, event.id)
 
     let lookupScriptResultAfter = executeScript(
         "../scripts/lookup.cdc",
-        [REGISTRY_OWNER.address, TEMPLATE_ID]
+        [REGISTRY_OWNER.address, TEMPLATE_ID, REGISTRY_NAME]
     )
 
     Test.expect(lookupScriptResultAfter, Test.beSucceeded())
@@ -178,17 +200,22 @@ access(all)
 fun testShouldRemoveFlix() {
     let removeTxResult = executeTransaction(
         "../transactions/remove_flix.cdc",
-        [TEMPLATE_ID],
+        [TEMPLATE_ID, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(removeTxResult, Test.beSucceeded())
 
     let typ = Type<FLIXRegistry.Removed>()
-    Test.assertEqual(1, Test.eventsOfType(typ).length)
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.Removed
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.registryName)
+    Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
+    Test.assertEqual(TEMPLATE_ID, event.id)
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -202,7 +229,7 @@ fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
 
     let removeTxResult = executeTransaction(
         "../transactions/remove_flix.cdc",
-        [TEMPLATE_ID],
+        [TEMPLATE_ID, REGISTRY_NAME],
         REGISTRY_OWNER
     )
     Test.expect(removeTxResult, Test.beSucceeded())
@@ -212,7 +239,7 @@ fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
-        [REGISTRY_OWNER.address]
+        [REGISTRY_OWNER.address, REGISTRY_NAME]
     )
     Test.expect(scriptResult, Test.beSucceeded())
 
@@ -227,7 +254,7 @@ fun testShouldThrowExeptionWhenDeprecatingNonexistentFlix() {
     Test.expectFailure(fun(): Void {
         let txResult = executeTransaction(
             "../transactions/deprecate_flix.cdc",
-            [TEMPLATE_ID],
+            [TEMPLATE_ID, REGISTRY_NAME],
             REGISTRY_OWNER
         )
         Test.expect(txResult, Test.beFailed())
@@ -235,4 +262,14 @@ fun testShouldThrowExeptionWhenDeprecatingNonexistentFlix() {
         panic(err!.message) // to trick expectFaliure, so we can match on the substring of the actual error
     }, errorMessageSubstring: "FLIX does not exist with the given id or alias: aTestId")
 
+}
+
+access(all)
+fun testShouldCreatePublicPath() {
+    Test.assertEqual(/public/flix_test, FLIXRegistry.PublicPath(name: "test"))
+}
+
+access(all)
+fun testShouldCreateStoragePath() {
+    Test.assertEqual(/storage/flix_test, FLIXRegistry.StoragePath(name: "test"))
 }

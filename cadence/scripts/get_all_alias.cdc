@@ -1,8 +1,8 @@
 import "FLIXRegistry"
 
-pub fun main(accountAddress: Address): {String: String} {
+pub fun main(accountAddress: Address, registryName: String): {String: String} {
     let account = getAccount(accountAddress)
-    let registry = account.getCapability(/public/stableFlixRegistryPublic)
+    let registry = account.getCapability(FLIXRegistry.PublicPath(name: registryName))
                             .borrow<&FLIXRegistry.Registry{FLIXRegistry.Queryable}>()
                             ?? panic("Could not borrow a reference to the Registry")
 
