@@ -10,7 +10,7 @@ transaction(name: String) {
 
             // Save it with restricted access
             signer.save(<-registry, to: FLIXRegistry.StoragePath(name: name))
-            signer.link<&FLIXRegistry.Registry{FLIXRegistry.Queryable, FLIXRegistry.Admin}>(FLIXRegistry.PublicPath(name: name), target: FLIXRegistry.StoragePath(name: name))
+            signer.link<&FLIXRegistry.Registry{FLIXRegistry.Queryable}>(FLIXRegistry.PublicPath(name: name), target: FLIXRegistry.StoragePath(name: name))
         }
     }
 }
