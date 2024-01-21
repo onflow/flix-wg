@@ -123,7 +123,13 @@ fun testShouldLinkAlias() {
     Test.expect(txResult, Test.beSucceeded())
 
     let typ = Type<FLIXRegistry.AliasLinked>()
-    Test.assertEqual(1, Test.eventsOfType(typ).length)
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.AliasLinked
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.registryName)
+    Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
+    Test.assertEqual(NEW_ALIAS, event.alias)
+    Test.assertEqual(TEMPLATE_ID, event.id)
 
     let scriptResult = executeScript(
         "../scripts/get_all_alias.cdc",
@@ -147,7 +153,12 @@ fun testShouldUnlinkAlias() {
     Test.expect(txResult, Test.beSucceeded())
 
     let typ = Type<FLIXRegistry.AliasUnlinked>()
-    Test.assertEqual(1, Test.eventsOfType(typ).length)
+    let events = Test.eventsOfType(typ)
+    let event = events[0] as! FLIXRegistry.AliasUnlinked
+    Test.assertEqual(1, events.length)
+    Test.assertEqual(REGISTRY_NAME, event.registryName)
+    Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
+    Test.assertEqual(ALIAS, event.alias)
 
     let scriptResult = executeScript(
         "../scripts/get_all_alias.cdc",

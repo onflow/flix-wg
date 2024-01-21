@@ -17,10 +17,10 @@ contract FLIXRegistry {
     event Deprecated(registryOwner: Address, registryName: String, registryUuid: UInt64, id: String)
 
     access(all)
-    event AliasLinked(alias: String, id: String)
+    event AliasLinked(registryOwner: Address, registryName: String, registryUuid: UInt64, alias: String, id: String)
 
     access(all)
-    event AliasUnlinked(alias: String)
+    event AliasUnlinked(registryOwner: Address, registryName: String, registryUuid: UInt64, alias: String)
 
     access(all)
     enum FLIXStatus: UInt8 {
@@ -110,13 +110,13 @@ contract FLIXRegistry {
         access(all)
         fun link(alias: String, id: String) {
             self.aliases[alias] = id
-            emit AliasLinked(alias: alias, id: id)
+            emit AliasLinked(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, alias: alias, id: id)
         }
 
         access(all)
         fun unlink(alias: String) {
             self.aliases.remove(key: alias)
-            emit AliasUnlinked(alias: alias)
+            emit AliasUnlinked(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, alias: alias)
         }
 
         access(all)
