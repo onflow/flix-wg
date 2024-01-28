@@ -1,4 +1,5 @@
 import "FLIXRegistry"
+import "FLIXRegistryInterface"
 
 transaction(name: String) {
 
@@ -10,7 +11,7 @@ transaction(name: String) {
 
             // Save it with restricted access
             signer.save(<-registry, to: FLIXRegistry.StoragePath(name: name))
-            signer.link<&FLIXRegistry.Registry{FLIXRegistry.Queryable}>(FLIXRegistry.PublicPath(name: name), target: FLIXRegistry.StoragePath(name: name))
+            signer.link<&FLIXRegistry.Registry{FLIXRegistryInterface.Queryable}>(FLIXRegistry.PublicPath(name: name), target: FLIXRegistry.StoragePath(name: name))
         }
     }
 }

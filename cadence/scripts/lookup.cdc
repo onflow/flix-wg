@@ -1,10 +1,12 @@
 import "FLIXRegistry"
+import "FLIXRegistryInterface"
+import "FLIXSchema_draft"
 
-pub fun main(accountAddress: Address, idOrAlias: String, registryName: String): FLIXRegistry.FLIX? {
+pub fun main(accountAddress: Address, idOrAlias: String, registryName: String): AnyStruct{FLIXRegistryInterface.InteractionTemplate}? {
     let account = getAccount(accountAddress)
     let registry = account.getCapability(FLIXRegistry.PublicPath(name: registryName))
-                            .borrow<&FLIXRegistry.Registry{FLIXRegistry.Queryable}>()
+                            .borrow<&FLIXRegistry.Registry{FLIXRegistryInterface.Queryable}>()
                             ?? panic("Could not borrow a reference to the Registry")
-
+    
     return registry.lookup(idOrAlias: idOrAlias)
 }

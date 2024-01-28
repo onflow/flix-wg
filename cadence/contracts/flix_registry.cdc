@@ -1,5 +1,7 @@
+import "FLIXRegistryInterface"
+
 access(all) 
-contract FLIXRegistry {
+contract FLIXRegistry: FLIXRegistryInterface {
 
     access(all)
     event ContractInitialized()
@@ -33,78 +35,24 @@ contract FLIXRegistry {
     }
 
     access(all)
-    struct FLIX {
-        access(all)
-        let id: String
+    resource Registry: FLIXRegistryInterface.Queryable, FLIXRegistryInterface.Removable, FLIXRegistryInterface.Admin {
 
-        access(all)
-        let jsonBody: String
-
-        access(all)
-        let cadenceBodyHash: String
-
-        pub(set)
-        var status: FLIXStatus
-
-        init(id: String, jsonBody: String, cadenceBodyHash: String) {
-            self.id = id
-            self.jsonBody = jsonBody
-            self.cadenceBodyHash = cadenceBodyHash
-            self.status = FLIXStatus.active
-        }
-    }
-
-    access(all)
-    resource interface Queryable{
-        access(all)
-        fun resolve(cadenceBodyHash: String): FLIX?
-
-        access(all)
-        fun lookup(idOrAlias: String): FLIX?
-
-        access(all)
-        fun getIds(): [String]
-
-        access(all)
-        fun getAllAlias(): {String: String}
-    }
-
-    access(all)
-    resource interface Admin {
-
-        /// Add the flix to the registry and add or update the alias to point to this flix
-        access(all) 
-        fun publish(alias: String, flix: FLIX)
-
-        access(all)
-        fun link(alias: String, id: String)
-
-        access(all)
-        fun unlink(alias: String)
-
-        access(all)
-        fun deprecate(idOrAlias: String)
-    }
-
-    access(all)
-    resource interface Removable {
-        access(all)
-        fun remove(id: String): FLIX?
-    }
-
-    access(all)
-    resource Registry: Queryable, Removable, Admin {
-
-        access(account) var flixes: {String: FLIX}
+        access(account) var flixes: {String: {FLIXRegistryInterface.InteractionTemplate}}
         access(account) var aliases: {String: String}
-        access(account) var cadenceBodyHashes: {String: FLIX}
+        access(account) var cadenceBodyHashes: {String: {FLIXRegistryInterface.InteractionTemplate}}
         access(account) let name: String
 
+        access(all)
+        fun getName(): String {
+            return self.name
+        }
+
         access(all) 
-        fun publish(alias: String, flix: FLIX) {
-            self.flixes[flix.id] = flix
-            self.aliases[alias] = flix.id
-            emit Published(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, alias: alias, id: flix.id, cadenceBodyHash: flix.cadenceBodyHash)
+        fun publish(alias: String, flix: {FLIXRegistryInterface.InteractionTemplate}) {
+            self.flixes[flix.getId()] = flix
+            self.aliases[alias] = flix.getId()
+            self.cadenceBodyHashes[flix.getCadenceBodyHash()] = flix
+            emit Published(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, alias: alias, id: flix.getId(), cadenceBodyHash: flix.getCadenceBodyHash())
         }
 
         access(all)
@@ -120,7 +68,7 @@ contract FLIXRegistry {
         }
 
         access(all)
-        fun lookup(idOrAlias: String): FLIX? {
+        fun lookup(idOrAlias: String): {FLIXRegistryInterface.InteractionTemplate}? {
             if self.aliases.containsKey(idOrAlias) {
                 return self.flixes[self.aliases[idOrAlias]!]
             }
@@ -128,7 +76,7 @@ contract FLIXRegistry {
         }
 
         access(all)
-        fun resolve(cadenceBodyHash: String): FLIX? {
+        fun resolve(cadenceBodyHash: String): {FLIXRegistryInterface.InteractionTemplate}? {
             return self.cadenceBodyHashes[cadenceBodyHash]
         }
 
@@ -136,12 +84,12 @@ contract FLIXRegistry {
         fun deprecate(idOrAlias: String) {
             var flix = self.lookup(idOrAlias: idOrAlias) ?? panic("FLIX does not exist with the given id or alias: ".concat(idOrAlias))
             flix.status = FLIXStatus.deprecated
-            self.flixes[flix.id] = flix
-            emit Deprecated(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, id: flix.id)
+            self.flixes[flix.getId()] = flix
+            emit Deprecated(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, id: flix.getId())
         }
 
         access(all)
-        fun remove(id: String): FLIX? {
+        fun remove(id: String): {FLIXRegistryInterface.InteractionTemplate}? {
             let removed = self.flixes.remove(key: id)
             if(removed != nil) { emit Removed(registryOwner: self.owner!.address, registryName: self.name, registryUuid: self.uuid, id: id) }
             return removed

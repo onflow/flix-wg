@@ -6,6 +6,20 @@
         "emulator": "0xf8d6e0586b0a20c7",
         "testing": "0x0000000000000007"
       }
+    },
+    "FLIXRegistryInterface": {
+      "source": "cadence/contracts/flix_registry_interface.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+        "testing": "0x0000000000000007"
+      }
+    },
+    "FLIXSchema_draft": {
+      "source": "cadence/contracts/flix_schema_draft.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+        "testing": "0x0000000000000007"
+      }
     }
   },
   "networks": {

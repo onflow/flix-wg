@@ -1,5 +1,6 @@
 import Test
 import BlockchainHelpers
+import "FLIXSchema_draft"
 import "FLIXRegistry"
 
 access(all) let REGISTRY_OWNER = Test.createAccount()
@@ -7,34 +8,68 @@ access(all) let TEMPLATE_ID = "aTestId"
 access(all) let ALIAS = "anAlias"
 access(all) let NEW_ALIAS = "aNewAlias"
 access(all) let REGISTRY_NAME = "someName"
+access(all) let FLIX_DATA: AnyStruct = "same data"
+access(all) let CADENCE_BODY_HASH = "someHash"
+
+access(all) let CONTRACT_DEPLOYED_SNAPSHOT = "contract deployed"
+access(all) let REGISTRY_CREATED_SNAPSHOT = "registry created"
+access(all) let FLIX_PUBLISHED_SNAPSHOT = "flix published"
+
 
 access(all)
 fun setup() {
-    let err = Test.deployContract(
+
+    let flixRegistryInterfaceErr = Test.deployContract(
+        name: "FLIXRegistryInterface",
+        path: "../contracts/flix_registry_interface.cdc",
+        arguments: []
+    )
+    Test.expect(flixRegistryInterfaceErr, Test.beNil())
+
+    let flixRegistryErr = Test.deployContract(
         name: "FLIXRegistry",
         path: "../contracts/flix_registry.cdc",
         arguments: []
     )
-    Test.expect(err, Test.beNil())
-    Test.createSnapshot(name: "contract deployed")
+    Test.expect(flixRegistryErr, Test.beNil())
 
-    let txResult = executeTransaction(
+    let flixSchema_draftErr = Test.deployContract(
+        name: "FLIXSchema_draft",
+        path: "../contracts/flix_schema_draft.cdc",
+        arguments: []
+    )
+    Test.expect(flixSchema_draftErr, Test.beNil())
+    Test.createSnapshot(name: CONTRACT_DEPLOYED_SNAPSHOT)
+
+    let createTxResult = executeTransaction(
         "../transactions/create_registry.cdc",
         [REGISTRY_NAME],
         REGISTRY_OWNER
     )
-    Test.expect(txResult, Test.beSucceeded())
-    Test.createSnapshot(name: "registry created")
+    Test.expect(createTxResult, Test.beSucceeded())
+    Test.createSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
+
+    let publishTxResult = executeTransaction(
+        "../transactions/publish_flix.cdc",
+        [ALIAS, TEMPLATE_ID, FLIX_DATA, CADENCE_BODY_HASH, REGISTRY_NAME],
+        REGISTRY_OWNER
+    )
+    Test.expect(publishTxResult, Test.beSucceeded())
+    Test.createSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
 }
 
 access(all)
 fun testShouldEmitContractInitializedEvent() {
+    Test.loadSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
+
     let typ = Type<FLIXRegistry.ContractInitialized>()
     Test.assertEqual(1, Test.eventsOfType(typ).length)
 }
 
 access(all)
 fun testShouldEmitRegistryCreatedEvent() {
+    Test.loadSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
+
     let typ = Type<FLIXRegistry.RegistryCreated>()
     let events = Test.eventsOfType(typ)
     let event = events[0] as! FLIXRegistry.RegistryCreated
@@ -44,6 +79,7 @@ fun testShouldEmitRegistryCreatedEvent() {
 
 access(all)
 fun testShouldCreateRegistry() {
+    Test.loadSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
@@ -56,16 +92,8 @@ fun testShouldCreateRegistry() {
 }
 
 access(all)
-fun testShouldPublishFlix() {
-    let jsonBody = "{\"some\":\"json body\"}"
-    let cadenceBodyHash = "someHash"
-
-    let txResult = executeTransaction(
-        "../transactions/publish_flix.cdc",
-        [ALIAS, TEMPLATE_ID, jsonBody, cadenceBodyHash, REGISTRY_NAME],
-        REGISTRY_OWNER
-    )
-    Test.expect(txResult, Test.beSucceeded())
+fun testShouldEmitEventAfterFlixPublished() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
 
     let typ = Type<FLIXRegistry.Published>()
     let events = Test.eventsOfType(typ)
@@ -75,7 +103,12 @@ fun testShouldPublishFlix() {
     Test.assertEqual(REGISTRY_OWNER.address, event.registryOwner)
     Test.assertEqual(ALIAS, event.alias)
     Test.assertEqual(TEMPLATE_ID, event.id)
-    Test.assertEqual(cadenceBodyHash, event.cadenceBodyHash)
+    Test.assertEqual(CADENCE_BODY_HASH, event.cadenceBodyHash)
+}
+
+access(all)
+fun testShouldContainFlixAfterPublished() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
 
     let scriptResult = executeScript(
         "../scripts/get_registry_size.cdc",
@@ -85,6 +118,11 @@ fun testShouldPublishFlix() {
 
     let registrySize = scriptResult.returnValue! as! Int
     Test.assertEqual(1, registrySize)
+}
+
+access(all)
+fun testShouldLookupFlixAfterPublished() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
 
     let lookupScriptResult = executeScript(
         "../scripts/lookup.cdc",
@@ -93,28 +131,36 @@ fun testShouldPublishFlix() {
 
     Test.expect(lookupScriptResult, Test.beSucceeded())
 
-    let flix = lookupScriptResult.returnValue! as! FLIXRegistry.FLIX
+    let flix = lookupScriptResult.returnValue! as! FLIXSchema_draft.FLIX
     Test.assertEqual(TEMPLATE_ID, flix.id)
-    Test.assertEqual(jsonBody, flix.jsonBody)
-    Test.assertEqual(cadenceBodyHash, flix.cadenceBodyHash)
+    Test.assertEqual(FLIX_DATA, flix.getData())
+    Test.assertEqual(CADENCE_BODY_HASH, flix.cadenceBodyHash)
     Test.assertEqual(FLIXRegistry.FLIXStatus.active, flix.status)
+    Test.assertEqual("draft", flix.getVersion())
+}
+
+access(all)
+fun testShouldResolveFlixAfterPublished() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
 
     let resolveScriptResult = executeScript(
         "../scripts/resolve.cdc",
-        [REGISTRY_OWNER.address, cadenceBodyHash, REGISTRY_NAME]
+        [REGISTRY_OWNER.address, CADENCE_BODY_HASH, REGISTRY_NAME]
     )
 
-    Test.expect(lookupScriptResult, Test.beSucceeded())
+    Test.expect(resolveScriptResult, Test.beSucceeded())
 
-    let resolvedFlix = lookupScriptResult.returnValue! as! FLIXRegistry.FLIX
+    let resolvedFlix = resolveScriptResult.returnValue! as! FLIXSchema_draft.FLIX
     Test.assertEqual(TEMPLATE_ID, resolvedFlix.id)
-    Test.assertEqual(jsonBody, resolvedFlix.jsonBody)
-    Test.assertEqual(cadenceBodyHash, resolvedFlix.cadenceBodyHash)
+    Test.assertEqual(FLIX_DATA, resolvedFlix.getData())
+    Test.assertEqual(CADENCE_BODY_HASH, resolvedFlix.cadenceBodyHash)
     Test.assertEqual(FLIXRegistry.FLIXStatus.active, resolvedFlix.status)
 }
 
 access(all)
 fun testShouldLinkAlias() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
+
     let txResult = executeTransaction(
         "../transactions/link_alias.cdc",
         [NEW_ALIAS, TEMPLATE_ID, REGISTRY_NAME],
@@ -145,6 +191,8 @@ fun testShouldLinkAlias() {
 
 access(all)
 fun testShouldUnlinkAlias() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
+
     let txResult = executeTransaction(
         "../transactions/unlink_alias.cdc",
         [ALIAS, REGISTRY_NAME],
@@ -174,11 +222,13 @@ fun testShouldUnlinkAlias() {
 
 access(all)
 fun testShouldDeprecateFlixWithTemplateId() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
+
     let lookupScriptResultBefore = executeScript(
         "../scripts/lookup.cdc",
         [REGISTRY_OWNER.address, TEMPLATE_ID, REGISTRY_NAME]
     )
-    let flixBefore = lookupScriptResultBefore.returnValue! as! FLIXRegistry.FLIX
+    let flixBefore = lookupScriptResultBefore.returnValue! as! FLIXSchema_draft.FLIX
     Test.assertEqual(FLIXRegistry.FLIXStatus.active, flixBefore.status)
 
     let txResult = executeTransaction(
@@ -203,12 +253,14 @@ fun testShouldDeprecateFlixWithTemplateId() {
 
     Test.expect(lookupScriptResultAfter, Test.beSucceeded())
 
-    let flixAfter = lookupScriptResultAfter.returnValue! as! FLIXRegistry.FLIX
+    let flixAfter = lookupScriptResultAfter.returnValue! as! FLIXSchema_draft.FLIX
     Test.assertEqual(FLIXRegistry.FLIXStatus.deprecated, flixAfter.status)
 }
 
 access(all)
 fun testShouldRemoveFlix() {
+    Test.loadSnapshot(name: FLIX_PUBLISHED_SNAPSHOT)
+
     let removeTxResult = executeTransaction(
         "../transactions/remove_flix.cdc",
         [TEMPLATE_ID, REGISTRY_NAME],
@@ -236,7 +288,7 @@ fun testShouldRemoveFlix() {
 
 access(all)
 fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
-    Test.loadSnapshot(name: "registry created")
+    Test.loadSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
 
     let removeTxResult = executeTransaction(
         "../transactions/remove_flix.cdc",
@@ -260,7 +312,7 @@ fun testShouldNotEmitEventWhenRemovingNonexistentFlix() {
 
 access(all)
 fun testShouldThrowExeptionWhenDeprecatingNonexistentFlix() {
-    Test.loadSnapshot(name: "registry created")
+    Test.loadSnapshot(name: REGISTRY_CREATED_SNAPSHOT)
 
     Test.expectFailure(fun(): Void {
         let txResult = executeTransaction(
