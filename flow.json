@@ -20,6 +20,13 @@
         "emulator": "0xf8d6e0586b0a20c7",
         "testing": "0x0000000000000007"
       }
+    },
+    "FLIXSchema_v1_1_0": {
+      "source": "cadence/contracts/flix_schema_v1_1_0.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+        "testing": "0x0000000000000007"
+      }
     }
   },
   "networks": {

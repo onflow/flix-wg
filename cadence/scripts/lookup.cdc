@@ -1,6 +1,5 @@
 import "FLIXRegistry"
 import "FLIXRegistryInterface"
-import "FLIXSchema_draft"
 
 pub fun main(accountAddress: Address, idOrAlias: String, registryName: String): AnyStruct{FLIXRegistryInterface.InteractionTemplate}? {
     let account = getAccount(accountAddress)
