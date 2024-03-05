@@ -1,0 +1,10 @@
+{
+  "contractPath": "../cadence/contracts/",
+  "txPath": "../cadence/transactions/",
+  "scriptPath": "../cadence/scripts/",
+  "registryIDs": {
+    "mainnet": "A.f8d6e0586b0a20c7.FLIXSchema_v1_1_0",
+    "testnet": "A.f8d6e0586b0a20c7.FLIXSchema_v1_1_0",
+    "emulator": "A.f8d6e0586b0a20c7.FLIXSchema_v1_1_0"
+  }
+}
