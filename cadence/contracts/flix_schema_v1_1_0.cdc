@@ -13,7 +13,7 @@ contract FLIXSchema_v1_1_0 {
         let data: Data
 
         access(all)
-        let cadenceBodyHash: String
+        let cadence_body_hash: String
 
         access(all)
         fun getId(): String {
@@ -32,22 +32,22 @@ contract FLIXSchema_v1_1_0 {
 
         access(all)
         fun getCadenceBodyHash(): String {
-            return self.cadenceBodyHash
+            return self.cadence_body_hash
         }
 
         access(all)
-        fun getStatus(): FLIXRegistryInterface.FLIXStatus {
+        fun getStatus(): String {
             return self.status
         }
 
         pub(set)
-        var status: FLIXRegistryInterface.FLIXStatus
+        var status: String
 
-        init(id: String, data: Data, cadenceBodyHash: String) {
+        init(id: String, data: Data, cadence_body_hash: String) {
             self.id = id
             self.data = data
-            self.cadenceBodyHash = cadenceBodyHash
-            self.status = FLIXRegistry.FLIXStatus.active
+            self.cadence_body_hash = cadence_body_hash
+            self.status = "active"
         }
     }
 
@@ -91,21 +91,21 @@ contract FLIXSchema_v1_1_0 {
 
     access(all) struct Cadence {
         access(all) var body: String
-        access(all) var networkPins: [NetworkPin]
+        access(all) var network_pins: [NetworkPin]
 
-        init(body: String, networkPins: [NetworkPin]) {
+        init(body: String, network_pins: [NetworkPin]) {
             self.body = body
-            self.networkPins = networkPins
+            self.network_pins = network_pins
         }
     }
 
      access(all) struct NetworkPin {
         access(all) var network: String
-        access(all) var pinSelf: String
+        access(all) var pin_self: String
 
-        init(network: String, pinSelf: String) {
+        init(network: String, pin_self: String) {
             self.network = network
-            self.pinSelf = pinSelf
+            self.pin_self = pin_self
         }
     }
 
@@ -130,73 +130,61 @@ contract FLIXSchema_v1_1_0 {
     access(all) struct Network {
         access(all) var network: String
         access(all) var address: String
-        access(all) var dependencyPinBlockHeight: UInt64
-        access(all) var dependencyPin: DependencyPin
+        access(all) var dependency_pin_block_height: UInt64
+        access(all) var dependency_pin: DependencyPin
 
-        init(network: String, address: String, dependencyPinBlockHeight: UInt64, dependencyPin: DependencyPin) {
+        init(network: String, address: String, dependency_pin_block_height: UInt64, dependency_pin: DependencyPin) {
             self.network = network
             self.address = address
-            self.dependencyPinBlockHeight = dependencyPinBlockHeight
-            self.dependencyPin = dependencyPin
+            self.dependency_pin_block_height = dependency_pin_block_height
+            self.dependency_pin = dependency_pin
         }
     }
 
     access(all) struct DependencyPin {
         access(all) var pin: String
-        access(all) var pinSelf: String
-        access(all) var pinContractName: String
-        access(all) var pinContractAddress: String
+        access(all) var pin_self: String
+        access(all) var pin_contract_name: String
+        access(all) var pin_contract_address: String
         access(all) var imports: [Import]
 
-        init(pin: String, pinSelf: String, pinContractName: String, pinContractAddress: String, imports: [Import]) {
+        init(pin: String, pin_self: String, pin_contract_name: String, pin_contract_address: String, imports: [Import]) {
             self.pin = pin
-            self.pinSelf = pinSelf
-            self.pinContractName = pinContractName
-            self.pinContractAddress = pinContractAddress
+            self.pin_self = pin_self
+            self.pin_contract_name = pin_contract_name
+            self.pin_contract_address = pin_contract_address
             self.imports = imports
         }
     }
 
     access(all) struct Import {
         access(all) var pin: String
-        access(all) var pinSelf: String
-        access(all) var pinContractName: String
-        access(all) var pinContractAddress: String
+        access(all) var pin_self: String
+        access(all) var pin_contract_name: String
+        access(all) var pin_contract_address: String
         access(all) var imports: [Import]
 
-        init(pin: String, pinSelf: String, pinContractName: String, pinContractAddress: String, imports: [Import]) {
+        init(pin: String, pin_self: String, pin_contract_name: String, pin_contract_address: String, imports: [Import]) {
             self.pin = pin
-            self.pinSelf = pinSelf
-            self.pinContractName = pinContractName
-            self.pinContractAddress = pinContractAddress
+            self.pin_self = pin_self
+            self.pin_contract_name = pin_contract_name
+            self.pin_contract_address = pin_contract_address
             self.imports = imports
         }
     }
 
+    // Had to remove balance since this is not being supported in the Go code
     access(all) struct Parameter {
         access(all) var label: String
         access(all) var index: Int
         access(all) var type: String
         access(all) var messages: [Message]
-        access(all) var balance: [Balance]
 
-        init(label: String, index: Int, type: String, messages: [Message], balance: [Balance]) {
+        init(label: String, index: Int, type: String, messages: [Message]) {
             self.label = label
             self.index = index
             self.type = type
             self.messages = messages
-            self.balance = balance
         }
     }
-
-    access(all) struct Balance {
-        access(all) var network: String
-        access(all) var pin: String
-
-        init(network: String, pin: String) {
-            self.network = network
-            self.pin = pin
-        }
-    }
-
 }

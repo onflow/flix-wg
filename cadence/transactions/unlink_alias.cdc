@@ -1,4 +1,4 @@
-import "FLIXRegistry"
+import FLIXRegistry from 0xf8d6e0586b0a20c7
 
 transaction(alias: String, registryName: String) {
 

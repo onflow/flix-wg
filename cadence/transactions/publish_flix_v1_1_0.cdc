@@ -1,5 +1,5 @@
-import "FLIXRegistry"
-import "FLIXSchema_v1_1_0"
+import FLIXRegistry from 0xf8d6e0586b0a20c7
+import FLIXSchema_v1_1_0 from 0xf8d6e0586b0a20c7
 
 transaction(alias: String, flix: FLIXSchema_v1_1_0.FLIX, registryName: String) {
 
